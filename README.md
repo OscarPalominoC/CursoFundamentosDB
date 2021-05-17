@@ -37,6 +37,10 @@ A través de la creación de un sistema de blogs obtendrás las habilidades nece
     * [Historia de SQL](#historia-de-sql)
     * [DDL create](#ddl-create)
     * [CREATE VIEW y DDL ALTER](#create-view-y-ddl-alter)
+    * [DDL drop](#ddl-drop)
+    * [DML](#dml-1)
+    * [¿Qué tan standard es SQL?](#qué-tan-standard-es-sql)
+    * [Creando Platziblog: tablas independientes](#creando-platziblog-tablas-independientes)
 
 ---
 
@@ -497,6 +501,164 @@ CREATE TABLE `platziblog`.`people` (
   `city` VARCHAR(255) NULL,
   PRIMARY KEY (`person_id`));
 ```
+Se añadieron visualmente los siguientes resultados:
+
+![Tabla People](/images/tabla-people.PNG)
 
 ## CREATE VIEW y DDL ALTER
 
+Las vista se usan como una capa de seguridad dentro de las organizaciones. por ejemplo: una tabla trabajador tiene todos los datos de una persona (numero de identificación, numero telefonico, dirección, y otros datos que pueden ser sensibles), el administrador de la base de datos lo que hace es crear vistas solo con los datos que son relevantes para consultas en las distintas areas de la empresas sin exponer información de mas.
+```sql
+CREATE VIEW v_brasil_customers AS
+SELECT customer_name,
+contact_name
+FROM customers
+WHERE country = "Brasil";
+```
+
+La vista creada para el proyecto fue la siguiente:
+
+```sql
+CREATE VIEW platzi_people_barrancabermeja AS
+SELECT * FROM platziblog.people
+WHERE city = "Barrancabermeja";
+```
+
+Esto crea una vista, entonces, al desplegar el dropdown menu de las vistas y darle clic derecho y luego clic a `Select Rows - Limit 1000` devolvió los siguientes resultados:
+
+![Vista people Barrancabermeja](/images/vista-people-barrancabermeja.PNG)
+
+### Alter Table
+
+```sql
+ALTER TABLE people
+ADD date_of_birth date;
+
+ALTER TABLE people
+ALTER COLUMN date_of_birth year;
+
+ALTER TABLE people
+DROP COLUMN date_of_birth;
+```
+Alter nos permite modificar nuestra tabla. Se puede ejecutar desde la línea de comandos o desde el manejador gráfico que nos proveé MySQL Workbench, simplemente le damos clic derecho a la tabla que queremos modificar, luego le damos clic a `Alter Table...` y con esto podemos modificarla gráficamente.
+
+**Añadimos la columna `date_of_birth`:**
+
+```sql
+ALTER TABLE `platziblog`.`people` 
+ADD COLUMN `date_of_birth` DATETIME NULL AFTER `city`;
+```
+
+**Modificamos la columna `date_of_birth`:**
+```sql
+ALTER TABLE `platziblog`.`people` 
+CHANGE COLUMN `date_of_birth` `date_of_birth` YEAR(4) NULL DEFAULT NULL ;
+```
+
+**Borramos la columna `date_of_birth`:**
+```sql
+ALTER TABLE `platziblog`.`people` 
+DROP COLUMN `date_of_birth`;
+```
+
+## DDL drop
+
+`Drop` es la secuencia más peligrosa cuando no se tiene experiencia o conocimientos manejando bases de datos, pues si no se declara específicamente que es lo que se desea borrar, puede o borrar una tabla o una base de datos completamente.
+
+```sql
+DROP TABLE people;
+
+DROP DATABASE test_db;
+```
+En el manejador visual de Workbench, simplemente le damos clic derecho a la tabla que queremos borrar, y luego a la opción `Drop Table...`, confirmamos si queremos borrar la tabla, existen tres opciones, Borrar Ahora, cancelar o Revisar código. Por buenas prácticas lo mejor siempre es revisar antes de ejecutar el código.
+
+![Drop table](/images/drop-table.PNG)
+
+La más peligrosa es `DROP SCHEMA` o `DROP DATABASE`, puesto que esta borraría toda la base de datos. En el editor visual siempre va a haber una confirmación puesto que es una sentencia peligrosa, en la consola puede que no pida confirmación sino que se ejecute inmediatamente.
+
+![Drop schema](/images/drop-schema.PNG)
+
+## DML
+
+Data Manipulation Language - Lenguaje de Manipulación de Datos. Lidia con la manipulación de datos e incluye las sentencias SQL más comunes como SELECT, INSERT, UPDATE, DELETE, etc., y es usada para almacenar, modificar, seleccionar, borrar y actualizar datos en una base de datos.
+
+* SELECT - selecciona o recupera los datos de una base de datos.
+```sql
+SELECT fist_name, last_name
+FROM people;
+```
+* INSERT - inserta datos en una DB
+```sql
+INSERT INTO people (last_name,
+first_name, address, city)
+VALUES ('Hernández', 'Laura',
+'Calle 21', 'Monterrey');
+```
+* UPDATE - actualiza datos en una DB existente
+```sql
+UPDATE people
+SET last_name = 'Chávez', city= 'Mérida'
+WHERE person_id = 1;
+
+UPDATE people
+SET first_name = 'Juan'
+WHERE city = 'Mérida';
+
+UPDATE people
+SET first_name = 'Juan';
+```
+* DELETE - borra todos los registros de una DB
+```sql
+DELETE FROM people
+WHERE person_id = 1;
+
+DELETE FROM people;
+```
+* MERGE - UPSERT esta operación inserta o actualiza datos
+* CALL - llama a un PL/SQL o un subprograma de Java
+* EXPLAIN PLAN - interpreta la ruta de acceso de los datos
+* LOCK TABLE - Control de concurrencia
+
+## ¿Qué tan standard es SQL?
+
+La utilidad más grande de SQL fue unificar la forma en la que pensamos y hacemos preguntas a un repositorio de datos. Ahora que nacen nuevas bases de datos igualmente siguen tomando elementos de SQL.
+
+* SQL unifico la manera en que sea hacen preguntas a un repositorio de datos.
+* Se convirtio en un standard util a la hora de usar bases de datos.
+* Existen otros manejadores de datos como Oracle o PostgreSQL.
+* Sin embargo, si escribimos en lenguaje SQL todos los manejadores funcionaran de manera similar.
+
+>Ejemplo de la clase.
+```sql
+Estructura básica de un Query
+SELECT city, count(*) AS total
+FROM people
+WHERE active = true
+GROUP BY city
+ORDER BY total DESC
+HAVING total >= 2;
+```
+
+>Tabla creada en clase.
+El instructor utilizó este mismo código para una DB en postgresql en la nube para demostrar que las mismas sentencias que se utilizan en MySQL pueden ser utilizadas en otros manejadores de tipo relacional.
+```sql
+CREATE TABLE people(
+person_id int,
+last_name varchar(255),
+first_name varchar(255),
+address varchar(255),
+city varchar(255)
+);
+
+INSERT INTO people (last_name, first_name, address, city)
+VALUES('Palomino Cardenas', 'Oscar Eduardo', 'Calle Increible', 'Barrancabermeja');
+
+DROP TABLE people;
+```
+
+## Creando Platziblog: tablas independientes
+
+* Una buena práctica es comenzar creando las entidades que no tienen una llave foránea.
+* Generalmente en los nombres de bases de datos se evita usar eñes o acentos para evitar problemas en los manejadores de las bases de datos.
+
+![Diagrama Físico Platziblog](/images/diagrama-fisico-platziblog.PNG)
