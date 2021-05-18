@@ -41,6 +41,8 @@ A través de la creación de un sistema de blogs obtendrás las habilidades nece
     * [DML](#dml-1)
     * [¿Qué tan standard es SQL?](#qué-tan-standard-es-sql)
     * [Creando Platziblog: tablas independientes](#creando-platziblog-tablas-independientes)
+    * [Creando Platziblog: tablas dependientes](#creando-platziblog-tablas-dependientes)
+    * [Creando Platziblog: tablas transitivas](#creando-platziblog-tablas-transitivas)
 
 ---
 
@@ -662,3 +664,62 @@ DROP TABLE people;
 * Generalmente en los nombres de bases de datos se evita usar eñes o acentos para evitar problemas en los manejadores de las bases de datos.
 
 ![Diagrama Físico Platziblog](/images/diagrama-fisico-platziblog.PNG)
+
+## Creando Platziblog: tablas dependientes
+
+El comando *“cascade”* sirve para que cada que se haga un update en la tabla principal, se refleje también en la tabla en la que estamos creando la relación.
+
+**Las Foreing Key options son las siguientes:**
+
+* On update: Significa qué pasará con las relaciones cuando una de estas sea modificada en sus campos relacionados, Por ejemplo, pueden utilizarse los valores:
+    * Cascade: Si el id de un usuario pasa de 11 a 12, entonces la relacion se actualizará y el post buscará el id nuevo en lugar de quedarse sin usuario.
+    * Restrict: Si el id de un usuario pasa de 11 a 12, no lo permitirá hasta que no sean actualizados antes todos los post relacionados.
+    * set null Si el id de un usuario pasa de 11 a 12, entonces los post solo no estará relacionados con nada.
+    * No action: Si el id de un usuario pasa de 11 a 12, no se hará nada. Solo se romperá la relación.
+* On delete
+    * Cascade: Si un usuario es eliminado entonces se borrarán todos los post relacionados.
+    * Eestrict: No se podrá eliminar un usuario hasta que sean eliminados todos su post relacionados.
+    * Set null: Si un usuario es eliminado, entonces los post solo no estará relacionados con nada.
+    * No action: Si un usuario es eliminado, no se hará nada. Solo se romperá la relación.
+
+En esta clase, primero se define el nombre de las columnas, incluyendo a las que serán las llaves foráneas.
+
+![Columnas](/images/columnas-posts.PNG)
+
+Creamos la tabla para poder trabajar en ella, se le da clic en apply y luego, nos vamos a la pestaña `Foreign keys` y seleccionamos las llaves foráneas.
+
+Las referenciamos y seleccionamos las opciones respecto a las llaves foráneas.
+
+![Foránea user](/images/referencia-userid.PNG)
+
+![Foránea category](/images/referencia-categoryid.PNG)
+
+Este es el código que se generó al darle Apply.
+
+```sql
+ALTER TABLE `platziblog`.`posts` 
+ADD INDEX `post_users_idx` (`user_id` ASC) VISIBLE,
+ADD INDEX `post_categories_idx` (`category_id` ASC) VISIBLE;
+;
+ALTER TABLE `platziblog`.`posts` 
+ADD CONSTRAINT `post_users`
+  FOREIGN KEY (`user_id`)
+  REFERENCES `platziblog`.`users` (`id`)
+  ON DELETE NO ACTION
+  ON UPDATE CASCADE,
+ADD CONSTRAINT `post_categories`
+  FOREIGN KEY (`category_id`)
+  REFERENCES `platziblog`.`categories` (`id`)
+  ON DELETE NO ACTION
+  ON UPDATE CASCADE;
+```
+
+Y así es como se visualiza la tabla en el manejador visual después de hacer estos cambios.
+
+![Post columns](/images/posts-columns.PNG)
+
+## Creando Platziblog: tablas transitivas
+
+* Las tablas transitivas sirven como puente para unir dos tablas. No tienen contenido semántico.
+* Reverse Engineer nos reproduce el esquema del cual nos basamos para crear nuestras tablas. Es útil cuando llegas a un nuevo trabajo y quieres entender cuál fue la mentalidad que tuvieron al momento de crear las bases de datos.
+
