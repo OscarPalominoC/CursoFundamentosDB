@@ -43,6 +43,9 @@ A través de la creación de un sistema de blogs obtendrás las habilidades nece
     * [Creando Platziblog: tablas independientes](#creando-platziblog-tablas-independientes)
     * [Creando Platziblog: tablas dependientes](#creando-platziblog-tablas-dependientes)
     * [Creando Platziblog: tablas transitivas](#creando-platziblog-tablas-transitivas)
+5. [Consultas a una base de datos](#consultas-a-una-base-de-datos)
+	* [¿Por qué las consultas son tan importantes?](#por-qué-las-consultas-son-tan-importantes)
+	* [Estructura básica de un Query](#estructura-básica-de-un-query)
 
 ---
 
@@ -723,3 +726,29 @@ Y así es como se visualiza la tabla en el manejador visual después de hacer es
 * Las tablas transitivas sirven como puente para unir dos tablas. No tienen contenido semántico.
 * Reverse Engineer nos reproduce el esquema del cual nos basamos para crear nuestras tablas. Es útil cuando llegas a un nuevo trabajo y quieres entender cuál fue la mentalidad que tuvieron al momento de crear las bases de datos.
 
+Creamos la tabla comments con la siguiente estructura:
+
+![Post](/images/comments-columns.PNG)
+
+Referenciamos las llaves foráneas y posteriormente, creamos una tabla transitiva, se llama así porque sirve como pivote para unir 2 tablas, pero semánticamente no tiene sentido, no tiene información propia pero sirve para ligar.
+
+![Transitiva](/images/tabla-transitiva.PNG)
+
+# Consultas a una base de datos
+
+## ¿Por qué las consultas son tan importantes?
+
+Las consultas o queries a una base de datos son una parte fundamental ya que esto podría salvar un negocio o empresa.
+
+Alrededor de las consultas a las bases de datos se han creado varias especialidades como ETL o transformación de datos, business intelligence e incluso machine learning.
+
+## Estructura básica de un Query
+
+```sql
+SELECT city, count(*) AS total
+FROM people
+WHERE active = true
+GROUP BY city
+ORDER BY total DESC
+HAVING total >= 2;
+```
