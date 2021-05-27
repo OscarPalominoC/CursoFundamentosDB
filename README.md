@@ -46,6 +46,14 @@ A través de la creación de un sistema de blogs obtendrás las habilidades nece
 5. [Consultas a una base de datos](#consultas-a-una-base-de-datos)
 	* [¿Por qué las consultas son tan importantes?](#por-qué-las-consultas-son-tan-importantes)
 	* [Estructura básica de un Query](#estructura-básica-de-un-query)
+	* [SELECT](#select)
+	* [FROM](#from)
+	* [Utilizando la sentencia FROM](#utilizando-la-sentencia-from)
+	* [WHERE](#where
+	* [Utilizando la sentencia WHERE nulo y no nulo](#utilizando-la-sentencia-where-nulo-y-no-nulo)
+	* [GROUP BY](#group-by)
+	* [ORDER BY y HAVING](#order-by-y-having)
+	* [El interminable agujero de conejo (Nested queries)](#El-interminable-agujero-de-conejo-nested-queries)
 
 ---
 
@@ -752,3 +760,301 @@ GROUP BY city
 ORDER BY total DESC
 HAVING total >= 2;
 ```
+Sentencias SQL utilizadas en esta clase.
+```sql
+SELECT	* 
+FROM	posts
+WHERE YEAR(fecha_publicacion) > 2024;
+
+SELECT	* 
+FROM	posts
+WHERE YEAR(fecha_publicacion) < 2024;
+```
+
+## SELECT
+
+SELECT se encarga de proyectar o mostrar datos.
+
+* El nombre de las columnas o campos que estamos consultando puede ser cambiado utilizando AS después del nombr* del campo y poniendo el nuevo que queremos tener:
+```sql
+SELECT titulo AS encabezado
+FROM posts;
+```
+* Existe una función de SELECT para poder contar la cantidad de registros. Esa información (un número) será el resultado del query:
+```sql
+SELECT COUNT(*)
+FROM posts;
+```
+
+## FROM
+
+FROM indica de dónde se deben traer los datos y puede ayudar a hacer sentencias y filtros complejos cuando se quieren unir tablas. La sentencia compañera que nos ayuda con este proceso es JOIN.
+
+Los diagramas de Venn son círculos que se tocan en algún punto para ver dónde está la intersección de conjuntos. Ayudan mucho para poder formular la sentencia JOIN de la manera adecuada dependiendo del query que se quiere hacer.
+
+![Join](/images/sqljoin.jpeg)
+
+## Utilizando la sentencia FROM
+
+La siguiente sentencia, trae a todos los usuarios de la DB y une su información con la información de los posts, es decir, que en la DB veremos todos los posts con el usuario que lo creo.
+```SQL
+SELECT *
+FROM	usuarios
+LEFT JOIN posts
+ON usuarios.id = posts.usuario_id;
+```
+
+La siguiente sentencia, trae a todos los usuarios que NO tienen posts.
+```sql
+SELECT *
+FROM	usuarios
+LEFT JOIN posts
+ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NULL;
+```
+
+La siguiente sentencia trae a todos los usuarios que SI tienen posts.
+```sql
+SELECT *
+FROM	usuarios
+LEFT JOIN posts
+ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NOT NULL;
+```
+
+La siguiente sentencia trae a todos los posts, incluído a los que no tienen usuario asociado.
+```sql
+SELECT *
+FROM	usuarios
+RIGHT JOIN posts
+ON usuarios.id = posts.usuario_id;
+```
+
+La siguiente sentencia trae a todos los post que NO poseen usuario asociado.
+```sql
+SELECT *
+FROM	usuarios
+RIGHT JOIN posts
+ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NULL;
+```
+
+La siguiente sentencia trae a todos los post que SI poseen usuario asociado.
+```sql
+SELECT *
+FROM	usuarios
+RIGHT JOIN posts
+ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NOT NULL;
+```
+
+La siguiente sentencia, trae a todos los datos que tengan el usuario id relacionado en el atributo `ON`. Es decir, que estén relacionados por ambos lados.
+```sql
+SELECT *
+FROM	usuarios
+INNER JOIN posts
+ON usuarios.id = posts.usuario_id;
+```
+
+La siguiente sentencia no es completamente estandar en SQL, y es la UNIÓN de las 2 tablas utilizando el atributo `FULL OUTER JOIN`.
+```sql
+SELECT *
+FROM	usuarios
+FULL OUTER JOIN posts
+ON usuarios.id = posts.usuario_id;
+```
+
+La forma de hacer esto en SQL es haciendo una unión compuesta de ambas tablas. Esto trae al universo de las tablas, la totalidad de la información.
+```sql
+SELECT *
+FROM	usuarios
+	LEFT JOIN posts ON usuarios.id = posts.usuario_id
+UNION
+SELECT *
+FROM	usuarios
+	RIGHT JOIN posts ON usuarios.id = posts.usuario_id;
+```
+
+La siguiente sentencia trae al universo de los datos, exceptuando la información que comparten. Es decir, los usuarios que NO tienen posts, y los posts que NO tienen usuario asignado.
+```sql
+SELECT *
+FROM	usuarios
+	LEFT JOIN posts ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NULL
+UNION
+SELECT *
+FROM	usuarios
+	RIGHT JOIN posts ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NULL;
+```
+
+La siguiente sentencia trae al universo de los datos, exceptuando la información que comparten. Es decir, los usuarios que SI tienen posts, y los posts que SI tienen usuario asignado. Es otra forma de hacer un INNER JOIN más elaborado.
+```sql
+SELECT *
+FROM	usuarios
+	LEFT JOIN posts ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NOT NULL
+UNION
+SELECT *
+FROM	usuarios
+	RIGHT JOIN posts ON usuarios.id = posts.usuario_id
+WHERE posts.usuario_id IS NOT NULL;
+```
+
+## WHERE
+
+WHERE es la sentencia que nos ayuda a filtrar tuplas o registros dependiendo de las características que elegimos.
+
+* La propiedad **LIKE** nos ayuda a traer registros de los cuales conocemos sólo una parte de la información.
+* La propiedad **BETWEEN** nos sirve para arrojar registros que estén en el medio de dos. Por ejemplo los registros con id entre 20 y 30.
+
+La siguiente sentencia nos trae todos los posts con el id menor a 50.
+```sql
+SELECT *
+FROM posts
+WHERE id < 50;
+```
+
+La siguiente sentencia nos trae todos los posts con el id mayor igual a 50.
+```sql
+SELECT *
+FROM posts
+WHERE id >= 50;
+```
+
+La siguiente sentencia nos trae todos los posts con el estado es activo.
+```sql
+SELECT *
+FROM posts
+WHERE estatus = 'activo';
+```
+
+La siguiente sentencia nos trae todos los posts con el estado es inactivo.
+```sql
+SELECT *
+FROM posts
+WHERE estatus = 'inactivo';
+
+SELECT *
+FROM posts
+WHERE estatus != 'activo';
+```
+
+### Propiedad LIKE
+
+Esta propiedad se utiliza con cadenas de texto, específicamente cuando no se tiene conocimiento del contenido exacto, entonces, se puede filtrar por una fracción del contenido.
+
+```sql
+SELECT *
+FROM posts
+WHERE titulo LIKE '%escandalo%';
+```
+
+Los signos de porcentaje indican la posibilidad de que hayan caracteres tanto antes como después de la palabra que queremos buscar. Si no tuviera el porcentaje de la izquierda, buscaría todos los títulos que empiecen con `escandalo`, si no tuviera el porcentaje de la derecha, buscaría todos los títulos que terminen con `escandalo`.
+
+### Propiedad BETWEEN
+
+Esta propiedad se utiliza con valores numéricos y con fechas.
+
+```sql
+SELECT *
+FROM posts
+WHERE fecha_publicacion BETWEEN '2023-01-01' AND '2025-12-31';
+
+SELECT *
+FROM posts
+WHERE id BETWEEN 50 AND 60;
+```
+
+## Utilizando la sentencia WHERE nulo y no nulo
+
+El valor nulo en una tabla generalmente es su valor por defecto cuando nadie le asignó algo diferente. La sintaxis para hacer búsquedas de datos nulos es `IS NULL`. La sintaxis para buscar datos que no son nulos es `IS NOT NULL`.
+
+## GROUP BY
+
+GROUP BY tiene que ver con agrupación. Indica a la base de datos qué criterios debe tener en cuenta para agrupar.
+
+Aparte de la función COUNT, podemos encontrar las siguientes funciones de agregado:
+* **AVG** Calcula el promedio
+* **COUNT** Cuenta los registros de un campo
+* **SUM** Suma los valores de un campo
+* **MAX** Devuelve el maximo de un campo
+* **MIN** Devuelve el mínimo de un campo
+
+GROUP BY nos permite hacer consultas mucho mas organizadas, de manera que la consulta se ejecuta dividida por los diferentes valores que posee la columna, de esta manera podemos determinar no solo el número de valores diferentes que puede tener un atributo, sino muchos otros parámetros como la cantidad de los mismos (con COUNT(*)).
+
+La siguiente sentencia agrupa el total de los posts por el nickname de los usuarios.
+```sql
+SELECT COUNT(*) AS total_posts, u.nickname
+FROM posts as p
+INNER JOIN usuarios AS u
+ON u.id = p.usuario_id
+GROUP BY u.nickname;
+```
+![Total posts](/images/group-by-totalposts.PNG)
+
+La siguiente sentencia agrupa el total de los posts por su estado.
+```sql
+SELECT COUNT(*) AS total_posts, estatus
+FROM posts
+GROUP BY estatus;
+```
+![Posts por estatus](/images/group-by-estatus.PNG)
+
+La siguiente sentencia agrupa el total de los posts por año, y lo ordena de forma ascendente por el año.
+```sql
+SELECT YEAR(fecha_publicacion) AS year_pub, COUNT(*) AS total_posts
+FROM posts
+GROUP BY year_pub
+ORDER BY year_pub ASC;
+```
+![Total posts year](/images/group-by-year.PNG)
+
+La siguiente sentencia agrupa el total de los posts por mes, sin tener en cuenta el año.
+```sql
+SELECT MONTHNAME(fecha_publicacion) AS month_pub, COUNT(*) AS total_posts
+FROM posts
+GROUP BY month_pub;
+```
+![Total posts by month](/images/group-by-month.PNG)
+
+La siguiente sentencia agrupa el total de los posts por mes y año y lo ordena de manera ascendente por el año.
+```sql
+SELECT MONTHNAME(fecha_publicacion) AS post_month, YEAR(fecha_publicacion) AS post_year, COUNT(*) AS total_posts
+FROM posts
+GROUP BY post_year, post_month
+ORDER BY post_year;
+```
+![Total post by month and year](/images/group-by-year-month.PNG)
+
+La siguiente sentencia agrupa el total de los posts por año, usuario y estado y lo ordena de manera ascendente.
+```sql
+SELECT YEAR(fecha_publicacion) AS post_year, usuarios.nickname, estatus, COUNT(*) AS total_posts
+FROM posts
+LEFT JOIN usuarios
+ON posts.usuario_id = usuarios.id
+GROUP BY post_year, estatus
+ORDER BY post_year ASC;
+```
+![total post by year, user and status](/images/group-by-year-user-status.PNG)
+
+## ORDER BY y HAVING
+
+La sentencia **ORDER BY** tiene que ver con el ordenamiento de los datos dependiendo de los criterios que quieras usar.
+
+* **ASC** sirve para ordenar de forma ascendente.
+* **DESC** sirve para ordenar de forma descendente.
+* **LIMIT** se usa para limitar la cantidad de resultados que arroja el query.
+
+**HAVING** tiene una similitud muy grande con **WHERE**, sin embargo el uso de ellos depende del orden. Cuando se quiere seleccionar tuplas agrupadas únicamente se puede hacer con **HAVING**.
+
+## El interminable agujero de conejo (Nested queries)
+
+Los Nested queries significan que dentro de un query podemos hacer otro query. Esto sirve para hacer join de tablas, estando una en memoria. También teniendo un query como condicional del otro.
+
+Este proceso puede ser tan profundo como quieras, teniendo infinitos queries anidados.
+Se le conoce como un producto cartesiano ya que se multiplican todos los registros de una tabla con todos los del nuevo query. Esto provoca que el query sea difícil de procesar por lo pesado que puede resultar.
+
+* Las consultas anidadas son la mejor opción cuando los valores dependen de otras tablas, y estas no se encuentran relacionadas entre si.
+* Las consultas anidadas son la mejor opción para casos de INSERT, DELETE, UPDATE, cuya condición dependa del esenario explicado en el punto anterior
+* Los JOINS son la mejor opción para casos de SELECT
